@@ -7,7 +7,7 @@ rem  Descarga el proyecto, instala dependencias y prepara tu
 rem  config.json con tu propio PAT de Azure DevOps.
 rem ============================================================
 
-set REPO_URL=https://github.com/REEMPLAZAR/azure_devops_daily.git
+set REPO_URL=https://github.com/aldomartinezciti/Dailys-CITI-CP.git
 set CARPETA=azure_devops_daily
 
 echo === Instalador de Azure DevOps Daily ===
