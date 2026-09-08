@@ -1,0 +1,15 @@
+# Configuración real (contiene el PAT de Azure DevOps) - nunca se sube
+config.json
+
+# Salidas generadas (datos del equipo, se regeneran localmente)
+salidas/*.xlsx
+salidas/*.csv
+salidas/*.md
+salidas/*.html
+!salidas/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

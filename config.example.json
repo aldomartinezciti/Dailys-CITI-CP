@@ -1,0 +1,66 @@
+{
+  "azure": {
+    "organization_url": "https://dev.azure.com/ClaroPay",
+    "project": "Proceso de Trabajo con SAFe",
+    "personal_access_token": "PEGA_AQUI_TU_PAT_DE_AZURE_DEVOPS",
+    "api_version": "7.1",
+    "team": "CORE TEAM",
+    "area_path": "",
+    "iteration_path": "CURRENT",
+    "team_field": "Agile Team",
+    "team_value": "Core Team",
+    "team_roster": [
+      "NOMBRE_INTEGRANTE_1",
+      "NOMBRE_INTEGRANTE_2",
+      "NOMBRE_INTEGRANTE_3"
+    ],
+    "spotlight_email": "correo@citi.com.mx",
+    "spotlight_nombre": "NOMBRE_DEL_SPOTLIGHT",
+    "spotlight_since": "AAAA-MM-DD",
+    "pat_expira": "AAAA-MM-DD"
+  },
+  "work_item_types": {
+    "user_story": "User Story",
+    "task": "Task"
+  },
+  "states": {
+    "closed": [
+      "Closed"
+    ],
+    "in_progress": [
+      "Active",
+      "In Progress",
+      "Doing"
+    ],
+    "new_todo": [
+      "New",
+      "To Do"
+    ]
+  },
+  "fields": {
+    "title": "System.Title",
+    "state": "System.State",
+    "assigned_to": "System.AssignedTo",
+    "work_item_type": "System.WorkItemType",
+    "parent": "System.Parent",
+    "changed_date": "System.ChangedDate",
+    "closed_date": "Microsoft.VSTS.Common.ClosedDate",
+    "start_date": "Microsoft.VSTS.Scheduling.StartDate",
+    "target_date": "Microsoft.VSTS.Scheduling.DueDate",
+    "estimated_hours": "Custom.Horas",
+    "real_hours": "Custom.HorasReales"
+  },
+  "logic": {
+    "lookback_hours": 24,
+    "timezone": "America/Mexico_City",
+    "upcoming_window_days": 2,
+    "hours_per_day": 8,
+    "default_iteration_hours": 120
+  },
+  "output": {
+    "closed_report_xlsx": "./salidas/contenedores_cerrados.xlsx",
+    "powerbi_export_csv": "./salidas/faltantes_powerbi.csv",
+    "dashboard_html": "./salidas/dashboard.html",
+    "daily_markdown": "./salidas/daily_scrum.md"
+  }
+}
