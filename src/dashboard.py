@@ -21,6 +21,7 @@ def construir_faltantes(contenedores_activos, tareas_por_padre, cfg):
         filas.append({
             "cont_id": c["id"],
             "tipo": c["tipo"],
+            "titulo": c["titulo"],
             "contenedor": f"[{c['tipo']} {c['id']}] {c['titulo']}",
             "estado": c["estado"],
             "tareas_totales": total,
@@ -43,7 +44,7 @@ def faltantes_registros(df):
     """Filas del DF de faltantes como lista de dicts (para embeber en JSON)."""
     if df.empty:
         return []
-    cols = ["cont_id", "contenedor", "tipo", "tareas_hechas", "tareas_faltantes", "tareas_totales"]
+    cols = ["cont_id", "contenedor", "titulo", "tipo", "tareas_hechas", "tareas_faltantes", "tareas_totales"]
     return df[cols].to_dict("records")
  
  
@@ -53,7 +54,6 @@ _PLANTILLA = """<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard Core Team — __FECHA__</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -188,6 +188,20 @@ _PLANTILLA = """<!DOCTYPE html>
              text-decoration:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15); }
   .tl-block:hover{ background:var(--accent); }
   .tl-empty{ color:var(--muted); font-style:italic; font-size:.85rem; padding:8px 0; }
+  .cont-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px;
+              padding:10px 16px; margin:8px 0; cursor:pointer; }
+  .cont-card:hover{ border-color:var(--accent2); }
+  .cont-row{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; }
+  .cont-title{ color:var(--text); font-weight:500; flex:1 1 220px; }
+  .cf-bar{ display:flex; height:14px; border-radius:999px; overflow:hidden; flex:1 1 160px;
+           min-width:100px; background:var(--input); border:1px solid var(--inputbd); }
+  .cf-hecha{ background:#7CA57C; height:100%; }
+  .cf-falta{ background:#C97B3A; height:100%; }
+  .cf-nums{ font-size:.78rem; color:var(--muted); white-space:nowrap; }
+  .cf-legend{ font-size:.78rem; color:var(--muted); margin:0 0 8px; }
+  .cf-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 4px 0 12px; vertical-align:middle; }
+  .cf-dot:first-child{ margin-left:0; }
+  .cf-dot-h{ background:#7CA57C; } .cf-dot-f{ background:#C97B3A; }
 </style></head>
 <body>
   <div id="pat-alert"><button class="x" title="Ocultar">&#10005;</button><span class="msg"></span></div>
@@ -207,6 +221,7 @@ _PLANTILLA = """<!DOCTYPE html>
     <button data-vista="hdu" class="on">Por HDU</button>
     <button data-vista="feature">Por Feature</button>
   </div>
+  <div class="cf-legend"><span class="cf-dot cf-dot-h"></span>Hechas<span class="cf-dot cf-dot-f"></span>Faltantes</div>
   <div id="chart"></div>
  
   <h2>Vista para la Daily Scrum</h2>
@@ -245,25 +260,27 @@ function renderChart(rows){
   const div = document.getElementById('chart');
   if(!rows || rows.length === 0){ div.innerHTML = '<p class="vacio">Sin contenedores con elementos en esta iteración.</p>'; return; }
   rows = rows.slice().sort((a,b)=>b.tareas_faltantes-a.tareas_faltantes);
-  const css = getComputedStyle(document.body);
-  const grid = css.getPropertyValue('--chart-grid').trim();
-  const tick = css.getPropertyValue('--chart-tick').trim();
-  const txt = css.getPropertyValue('--text').trim();
-  const y = rows.map(r=>r.contenedor);
-  const ejes = {gridcolor:grid, zerolinecolor:grid, tickfont:{color:tick}};
-  Plotly.newPlot(div, [
-    {type:'bar', orientation:'h', y:y, x:rows.map(r=>r.tareas_hechas), name:'Hechas', marker:{color:'#7CA57C'}},
-    {type:'bar', orientation:'h', y:y, x:rows.map(r=>r.tareas_faltantes), name:'Faltantes', marker:{color:'#C97B3A'}}
-  ], {barmode:'stack', height:Math.max(280, 26*rows.length+120),
-      margin:{l:10,r:20,t:10,b:36}, legend:{orientation:'h', font:{color:tick}},
-      xaxis:ejes, yaxis:Object.assign({autorange:'reversed'}, ejes),
-      paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-      font:{family:'IBM Plex Sans', color:txt}},
-     {responsive:true, displayModeBar:false});
-  div.on('plotly_click', function(data){
-    const pt = data.points && data.points[0];
-    const row = pt && rows[pt.pointIndex];
-    if(row && row.cont_id) window.open(WI_BASE + row.cont_id, '_blank', 'noopener');
+  div.innerHTML = rows.map(r => {
+    const total = r.tareas_totales || 0;
+    const pctH = total ? Math.round(r.tareas_hechas / total * 100) : 0;
+    const pctF = 100 - pctH;
+    return '<div class="cont-card" data-id="'+r.cont_id+'">'
+      + '<div class="cont-row">'
+      + '<a class="wi" href="'+WI_BASE+r.cont_id+'" target="_blank" rel="noopener">#'+r.cont_id+'</a>'
+      + '<span class="type">'+esc(r.tipo)+'</span>'
+      + '<span class="cont-title">'+esc(r.titulo)+'</span>'
+      + '<div class="cf-bar" title="'+r.tareas_hechas+' hechas / '+r.tareas_faltantes+' faltantes">'
+      + '<div class="cf-hecha" style="width:'+pctH+'%"></div>'
+      + '<div class="cf-falta" style="width:'+pctF+'%"></div>'
+      + '</div>'
+      + '<span class="cf-nums">'+r.tareas_hechas+'/'+total+'</span>'
+      + '</div></div>';
+  }).join('');
+  div.querySelectorAll('.cont-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if(e.target.closest('a')) return;
+      window.open(WI_BASE + card.dataset.id, '_blank', 'noopener');
+    });
   });
 }
  
