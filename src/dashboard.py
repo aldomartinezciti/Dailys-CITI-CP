@@ -220,6 +220,7 @@ _PLANTILLA = """<!DOCTYPE html>
   <div class="tabs" id="cont-tabs">
     <button data-vista="hdu" class="on">Por HDU</button>
     <button data-vista="feature">Por Feature</button>
+    <button data-vista="otros">Issues, Tareas, Objetivos y +</button>
   </div>
   <div class="cf-legend"><span class="cf-dot cf-dot-h"></span>Hechas<span class="cf-dot cf-dot-f"></span>Faltantes</div>
   <div id="chart"></div>
@@ -476,8 +477,10 @@ function renderLaura(){
 }
  
 function pintar(path){
-  const d = DATOS[path] || {faltantes:[], faltantes_features:[], devs:{}, rango:null};
-  const rows = (vistaContenedor === 'feature') ? d.faltantes_features : d.faltantes;
+  const d = DATOS[path] || {faltantes:[], faltantes_otros:[], faltantes_features:[], devs:{}, rango:null};
+  const rows = (vistaContenedor === 'feature') ? d.faltantes_features
+             : (vistaContenedor === 'otros') ? d.faltantes_otros
+             : d.faltantes;
   renderChart(rows);
   renderDaily(d.devs, d.rango);
   document.getElementById('badge').style.display = (path===ACTUAL) ? '' : 'none';

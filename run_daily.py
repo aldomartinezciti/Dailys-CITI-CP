@@ -368,7 +368,10 @@ def main():
         por_padre_it = agrupar_por_padre(tareas_it)
         activos_it = [c for c in contenedores.values()
                       if c["id"] in por_padre_it and c["estado"] not in cerrados_estado]
-        df_it = dashboard.construir_faltantes(activos_it, por_padre_it, cfg)
+        activos_hdu_it = [c for c in activos_it if c["tipo"] == hdu_tipo]
+        activos_otros_it = [c for c in activos_it if c["tipo"] != hdu_tipo]
+        df_it = dashboard.construir_faltantes(activos_hdu_it, por_padre_it, cfg)
+        df_otros_it = dashboard.construir_faltantes(activos_otros_it, por_padre_it, cfg)
 
         hdus_it = [h for h in hdus_todas if h["iteration"] == path]
         por_feature_it = agrupar_por_padre(hdus_it)
@@ -384,6 +387,7 @@ def main():
 
         datos[path] = {
             "faltantes": dashboard.faltantes_registros(df_it),
+            "faltantes_otros": dashboard.faltantes_registros(df_otros_it),
             "faltantes_features": dashboard.faltantes_registros(df_features_it),
             "devs": daily_scrum.por_dev_filtros(tareas_it, cfg, roster_cfg, horas_disp),
             "rango": {"inicio": ini_it.isoformat() if ini_it else None,
