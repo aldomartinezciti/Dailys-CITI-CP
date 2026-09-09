@@ -43,7 +43,7 @@ def faltantes_registros(df):
     """Filas del DF de faltantes como lista de dicts (para embeber en JSON)."""
     if df.empty:
         return []
-    cols = ["contenedor", "tipo", "tareas_hechas", "tareas_faltantes", "tareas_totales"]
+    cols = ["cont_id", "contenedor", "tipo", "tareas_hechas", "tareas_faltantes", "tareas_totales"]
     return df[cols].to_dict("records")
  
  
@@ -203,6 +203,10 @@ _PLANTILLA = """<!DOCTYPE html>
   </div>
  
   <h2>Task faltantes por contenedor</h2>
+  <div class="tabs" id="cont-tabs">
+    <button data-vista="hdu" class="on">Por HDU</button>
+    <button data-vista="feature">Por Feature</button>
+  </div>
   <div id="chart"></div>
  
   <h2>Vista para la Daily Scrum</h2>
@@ -239,7 +243,7 @@ function ls_set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
  
 function renderChart(rows){
   const div = document.getElementById('chart');
-  if(!rows || rows.length === 0){ div.innerHTML = '<p class="vacio">Sin contenedores con Task en esta iteración.</p>'; return; }
+  if(!rows || rows.length === 0){ div.innerHTML = '<p class="vacio">Sin contenedores con elementos en esta iteración.</p>'; return; }
   rows = rows.slice().sort((a,b)=>b.tareas_faltantes-a.tareas_faltantes);
   const css = getComputedStyle(document.body);
   const grid = css.getPropertyValue('--chart-grid').trim();
@@ -256,9 +260,15 @@ function renderChart(rows){
       paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
       font:{family:'IBM Plex Sans', color:txt}},
      {responsive:true, displayModeBar:false});
+  div.on('plotly_click', function(data){
+    const pt = data.points && data.points[0];
+    const row = pt && rows[pt.pointIndex];
+    if(row && row.cont_id) window.open(WI_BASE + row.cont_id, '_blank', 'noopener');
+  });
 }
  
 const CATS = [["en_curso","En curso"],["proximas","Próximas"],["atrasadas","Atrasadas"],["closed","Closed"],["todas","Todas"],["timeline","Línea de tiempo"]];
+let vistaContenedor = 'hdu';
 
 function isoLocal(dt){
   const y = dt.getFullYear(), m = String(dt.getMonth()+1).padStart(2,'0'), d = String(dt.getDate()).padStart(2,'0');
@@ -449,12 +459,23 @@ function renderLaura(){
 }
  
 function pintar(path){
-  const d = DATOS[path] || {faltantes:[], devs:{}, rango:null};
-  renderChart(d.faltantes);
+  const d = DATOS[path] || {faltantes:[], faltantes_features:[], devs:{}, rango:null};
+  const rows = (vistaContenedor === 'feature') ? d.faltantes_features : d.faltantes;
+  renderChart(rows);
   renderDaily(d.devs, d.rango);
   document.getElementById('badge').style.display = (path===ACTUAL) ? '' : 'none';
 }
  
+// Cards para cambiar entre vista por HDU y por Feature
+const contTabs = document.getElementById('cont-tabs');
+contTabs.addEventListener('click', e => {
+  const b = e.target.closest('button[data-vista]'); if(!b) return;
+  contTabs.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  vistaContenedor = b.dataset.vista;
+  pintar(sel.value);
+});
+
 // Selector de iteración
 const sel = document.getElementById('sel');
 ORDEN.forEach(p => {

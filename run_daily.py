@@ -322,6 +322,14 @@ def main():
     contenedores = {wi["id"]: Q.normalizar(wi, cfg) for wi in contenedores_raw}
     cerrados_estado = set(cfg.states["closed"])
 
+    # --- 3b) Subir un nivel más: Features padre de las HDU ---------------
+    hdu_tipo = cfg.wit["user_story"]
+    hdus_todas = [c for c in contenedores.values() if c["tipo"] == hdu_tipo]
+    ids_features = sorted({h["parent"] for h in hdus_todas if h["parent"]})
+    features_raw = cliente.get_work_items(ids_features, campos) if ids_features else []
+    features = {wi["id"]: Q.normalizar(wi, cfg) for wi in features_raw}
+    print(f"   HDU con Feature padre: {len(ids_features)} -> {len(features)} Features")
+
     # --- 4) Iteraciones a mostrar en el selector (ordenadas) ------------
     orden = []
     if iters_equipo:
@@ -362,6 +370,12 @@ def main():
                       if c["id"] in por_padre_it and c["estado"] not in cerrados_estado]
         df_it = dashboard.construir_faltantes(activos_it, por_padre_it, cfg)
 
+        hdus_it = [h for h in hdus_todas if h["iteration"] == path]
+        por_feature_it = agrupar_por_padre(hdus_it)
+        features_activos_it = [f for f in features.values()
+                                if f["id"] in por_feature_it and f["estado"] not in cerrados_estado]
+        df_features_it = dashboard.construir_faltantes(features_activos_it, por_feature_it, cfg)
+
         ini_it, fin_it = rango_iters.get(path, (None, None))
         if ini_it and fin_it:
             horas_disp = dias_habiles(ini_it, fin_it) * horas_por_dia
@@ -370,6 +384,7 @@ def main():
 
         datos[path] = {
             "faltantes": dashboard.faltantes_registros(df_it),
+            "faltantes_features": dashboard.faltantes_registros(df_features_it),
             "devs": daily_scrum.por_dev_filtros(tareas_it, cfg, roster_cfg, horas_disp),
             "rango": {"inicio": ini_it.isoformat() if ini_it else None,
                       "fin": fin_it.isoformat() if fin_it else None,
